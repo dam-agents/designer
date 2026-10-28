@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dam-agents/dam-starter-kits/main/kit.schema.json
+# The starter kit this definition is offered as. It lives here, beside the
+# definition it describes, so a change to the agent and a change to the kit
+# offering it are the same commit.
+schemaVersion: v1
+id: designer
+name: Designer
+tagline: Slides, mockups, charts and demo videos, with or without code.
+description: >-
+  Describe what you need and get a finished design back: a slide deck, a
+  clickable UI mockup, a step-by-step walkthrough, a chart, a demo video, or
+  the copy to go with it, each published as a private artifact. Connect a
+  GitHub repo and mockups and walkthroughs are built on your product's real
+  styles and components, compiled fresh from its code. Without one, it uses a
+  brand you upload or IBM Carbon. Works on request only; one optional weekly
+  self-check.
+category: productivity
+icon: paint-brush
+avatar: spark
+docsUrl: https://github.com/dam-agents/designer#readme
+harnesses: [claude-code]
+
+# `self` is this repository, at the commit the kit was resolved at. Into $HOME,
+# so work/ (the brand, repo profiles, outputs) sits beside it, git-ignored.
+seed:
+  self: true
+  into: home
+
+# The toolchain (Tailwind, React, Playwright, ffmpeg, Carbon tokens, fonts) goes
+# into $HOME before the first session, so the first request does not wait on it.
+# Idempotent; ONBOARDING runs it again and `design doctor` names it as the fix.
+install:
+  command: bash "$HOME/scripts/install-toolkit.sh"
+
+resources:
+  storage: 10Gi
+  note: >-
+    Each repo-mode build clones the repository and keeps that repository's
+    exact Tailwind and component toolchain, and video renders write frames and
+    MP4s — more disk than a chat agent.
+
+# npm, PyPI and GitHub (fonts, toolchains, repo clones) are all on the trusted
+# list; nothing this kit needs is outside it.
+egressPreset: trusted
+
+bundledSkills:
+  path: .agents/skills
+
+connections:
+  - accepts: [github, github-enterprise]
+    note: >-
+      Optional. Lets mockups, walkthroughs and videos use a private repo's
+      real styles, components and copy. Public repos and no-repo work
+      (Carbon or your brand) need nothing.
+
+channels:
+  - type: slack
+    conversation: direct
+    note: >-
+      Optional. Send requests and screenshots in a DM; deliverables come back
+      as artifact links in the same thread.
+
+schedules:
+  # Suggested off: the kit works entirely on request. On, it checks once a week
+  # that the toolchain still installs and renders, and reports only problems.
+  - name: designer-audit-weekly
+    cron: "0 13 * * 1"
+    description: Checks every Monday that the design toolchain still installs and renders; silent when healthy.
+    enabled: false
+    sessionMode: fresh
+    task: >-
+      Weekly audit. Follow CLAUDE.md → "Audit run": read docs/audit.md, run
+      `bash "$HOME/scripts/audit.sh"`, and report only what is not ok, in one
+      message to the operator; say nothing when everything passes.
