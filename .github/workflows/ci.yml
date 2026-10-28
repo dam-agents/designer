@@ -84,6 +84,13 @@ jobs:
           done
           echo "checked $n cross-file section references"
           exit $rc
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The toolkit's packages (Tailwind, Carbon tokens, React) so the build and theme
+      # suites run for real. No browser: the offline suite takes no screenshots.
+      - name: toolkit packages
+        run: npm ci --prefix toolkit --no-audit --no-fund --ignore-scripts
       - name: offline test suite
         run: |
           if [ -x scripts/tests/run.sh ] || [ -f scripts/tests/run.sh ]; then
